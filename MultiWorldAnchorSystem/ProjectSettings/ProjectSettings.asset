@@ -564,7 +564,7 @@ PlayerSettings:
   m_MobileRenderingPath: 1
   metroPackageName: MultiWorldAnchorSystem
   metroPackageVersion: 1.0.0.0
-  metroCertificatePath: D:\Program\HoloLab\HoloLabToolkit\MultiWorldAnchorSystem\MultiWorldAnchorSystem\Assets\WSATestCertificate.pfx
+  metroCertificatePath: Assets\WSATestCertificate.pfx
   metroCertificatePassword: 
   metroCertificateSubject: DefaultCompany
   metroCertificateIssuer: DefaultCompany
