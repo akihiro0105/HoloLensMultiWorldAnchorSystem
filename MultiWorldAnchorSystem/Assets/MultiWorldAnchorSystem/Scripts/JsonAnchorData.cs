@@ -10,6 +10,10 @@ namespace MultiWorldAnchorSystem
     {
         private static string fileName = "info.json";
 
+        /// <summary>
+        /// HubAnchorデータの読み込み
+        /// </summary>
+        /// <returns></returns>
         public static List<JsonHubAnchor> LoadAnchorData()
         {
             if (File.Exists(Application.persistentDataPath + "\\" + fileName) == true)
@@ -25,6 +29,10 @@ namespace MultiWorldAnchorSystem
             }
         }
 
+        /// <summary>
+        /// HubAnchorデータの保存
+        /// </summary>
+        /// <param name="data"></param>
         public static void SaveAnchorData(List<JsonHubAnchor> data)
         {
             string json = JsonUtility.ToJson(new JsonCenter() {worldanchor = data});

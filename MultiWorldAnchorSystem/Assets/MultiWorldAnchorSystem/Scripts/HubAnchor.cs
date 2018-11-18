@@ -1,20 +1,24 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace MultiWorldAnchorSystem
 {
 
-    public class HubAnchor 
+    public class HubAnchor
     {
-    }
+        public delegate void HubAnchorEventHandler();
 
-    public class CenterAnchor
-    {
         /// <summary>
-        /// Hubアンカーの有効フラグ
+        /// HubAnchor読み込み完了通知
         /// </summary>
-        public bool Enable = false;
+        public HubAnchorEventHandler LoadedHubAnchor;
+
+        /// <summary>
+        /// HubAnchor保存完了通知
+        /// </summary>
+        public HubAnchorEventHandler SavedHubAnchor;
 
         /// <summary>
         /// センターオブジェクト
@@ -35,109 +39,107 @@ namespace MultiWorldAnchorSystem
         /// WorldAnchor群
         /// </summary>
         private GameObject[] worldAnchorObjects;
+        /// <summary>
+        /// WorldAnchor群有効化フラグ
+        /// </summary>
+        private bool[] isWorldAnchorObjects;
 
+        /// <summary>
+        /// 記録されたjsonのアンカーデータ
+        /// </summary>
+        private JsonHubAnchor jsonHubAnchor;
 
-        public GameObject root { get; private set; }
-        private bool[] isActiveWorldAnchor;
+        /// <summary>
+        /// 保存データ比較用位置
+        /// </summary>
+        private Vector3 checkPosition;
 
-        private JsonHubAnchor json;
+        /// <summary>
+        /// 保存データ比較用WorldAnchor番号
+        /// </summary>
+        private int checkNumber;
 
-        public bool anchorLoaded { get; private set; }
-
-        private int anchorAllLoaded = 0;
-        private int CheckNum = 0;
-        private Vector3 CheckPoint;
-        public CenterAnchor(string name, int anchorCount)
+        /// <summary>
+        /// HubAnchorの初期化
+        /// </summary>
+        /// <param name="anchorName"></param>
+        public HubAnchor(string anchorName)
         {
-            centerObject = new GameObject(name);
-            rootHubObject = new GameObject(name+"_hubRoot");
-            frontHubObject = new GameObject(name + "_hubFront");
-
-            worldAnchorObjects = new GameObject[anchorCount];
-            isActiveWorldAnchor = new bool[worldAnchorObjects.Length];
-            for (int i = 0; i < worldAnchorObjects.Length; i++)
+            // GameObject初期化
+            centerObject = new GameObject(anchorName);
+            rootHubObject = new GameObject(anchorName + "_hubRoot");
+            rootHubObject.transform.SetParent(centerObject.transform);
+            frontHubObject = new GameObject(anchorName + "_hubFront");
+            worldAnchorObjects = new GameObject[StaticParameter.worldAnchorCount];
+            isWorldAnchorObjects = new bool[worldAnchorObjects.Length];
+            for (var i = 0; i < worldAnchorObjects.Length; i++)
             {
-                worldAnchorObjects[i] = new GameObject(name + "_"+i.ToString());
-                isActiveWorldAnchor[i] = false;
+                worldAnchorObjects[i] = new GameObject(anchorName + "_" + i);
+                isWorldAnchorObjects[i] = false;
             }
-
-
-            root = new GameObject(centerObject.name + "_root");
-            root.transform.SetParent(centerObject.transform);
-            
-          
-            CheckPoint = new Vector3();
-            Enable = false;
         }
 
-        public void LoadWorldAnchor(JsonHubAnchor _json, WorldAnchorControl anchor)
+        /// <summary>
+        /// Anchor情報のWorldAnchorからの取得
+        /// </summary>
+        public void LoadAnchorData(WorldAnchorControl anchor, JsonHubAnchor json)
         {
-            anchorLoaded = false;
-            anchorAllLoaded = 0;
-            json = _json;
+            jsonHubAnchor = json;
+            // WorldAnchorの読み込み
             anchor.LoadedEvent += LoadedEvent;
             for (int i = 0; i < worldAnchorObjects.Length; i++)
             {
-                isActiveWorldAnchor[i] = false;
+                isWorldAnchorObjects[i] = false;
                 anchor.LoadWorldAnchor(worldAnchorObjects[i]);
             }
         }
 
+        /// <summary>
+        /// WorldAnchor読み込み完了処理
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="go"></param>
+        /// <param name="success"></param>
         private void LoadedEvent(WorldAnchorControl self, GameObject go, bool success)
         {
-            int count = 0;
-            for (int i = 0; i < worldAnchorObjects.Length; i++)
+            // WorldAnchor読み込み完了処理
+            var activeCount = 0;
+            for (var i = 0; i < worldAnchorObjects.Length; i++)
             {
-                if (worldAnchorObjects[i].name == go.name)
-                {
-                    if (success == true)
-                    {
-                        isActiveWorldAnchor[i] = true;
-                    }
-                    anchorAllLoaded++;
-                }
-                if (isActiveWorldAnchor[i] == true)
-                {
-                    count++;
-                }
+                if (go.name == worldAnchorObjects[i].name && success == true) isWorldAnchorObjects[i] = true;
+                if (isWorldAnchorObjects[i] == true) activeCount++;
             }
-            if (count > worldAnchorObjects.Length * StaticParameter.minAnchorLength && anchorLoaded == false)
+
+            if (activeCount > worldAnchorObjects.Length * StaticParameter.minAnchorLength)
             {
-                anchorLoaded = SetCenterFromWorldAnchor();
-            }
-            if (anchorAllLoaded >= worldAnchorObjects.Length)
-            {
+                // HubAnchor組み立て
+                CreateHubAnchor();
+                if (LoadedHubAnchor != null) LoadedHubAnchor();
                 self.LoadedEvent -= LoadedEvent;
             }
         }
 
-        public bool SetCenterFromWorldAnchor(int count = 0, System.Random _r = null)
+        /// <summary>
+        /// HubAnchorの組み立て
+        /// </summary>
+        public void CreateHubAnchor(int count = 0, System.Random _r = null)
         {
             // select worldanchor num
-            List<int> list = new List<int>();
-            for (int i = 0; i < isActiveWorldAnchor.Length; i++)
+            var list = new List<int>();
+            for (var i = 0; i < isWorldAnchorObjects.Length; i++)
             {
-                if (isActiveWorldAnchor[i] == true)
-                {
-                    list.Add(i);
-                }
+                if (isWorldAnchorObjects[i] == true) list.Add(i);
             }
-            System.Random r;
-            if (_r == null)
-            {
-                r = new System.Random();
-            }
-            else
-            {
-                r = _r;
-            }
-            int point1 = list[r.Next(0, list.Count - 1)];
-            int point2 = list[r.Next(0, list.Count - 1)];
-            int point3 = list[r.Next(0, list.Count - 1)];
+
+            if (list.Count == 0) return;
+            var r = _r ?? new System.Random();
+            var point1 = list[r.Next(0, list.Count - 1)];
+            var point2 = list[r.Next(0, list.Count - 1)];
+            var point3 = list[r.Next(0, list.Count - 1)];
             // json distance
-            Vector3 j1 = json.worldanchorCenter[point1].GetVector3();
-            Vector3 j2 = json.worldanchorCenter[point2].GetVector3();
-            Vector3 j3 = json.worldanchorCenter[point3].GetVector3();
+            Vector3 j1 = jsonHubAnchor.worldanchorCenter[point1].GetVector3();
+            Vector3 j2 = jsonHubAnchor.worldanchorCenter[point2].GetVector3();
+            Vector3 j3 = jsonHubAnchor.worldanchorCenter[point3].GetVector3();
             float j12 = Vector3.Distance(j1, j2);
             float j23 = Vector3.Distance(j2, j3);
             float j31 = Vector3.Distance(j3, j1);
@@ -162,15 +164,15 @@ namespace MultiWorldAnchorSystem
                     float a = (x11.z * x1.x * x4.x + x11.z * x1.z * x4.z - x31.z * x1.x * x2.x - x31.z * x1.z * x2.z) / (x11.z * x31.x - x31.z * x11.x);
                     float b = 0.0f;
                     float c = (x1.x * x2.x + x1.z * x2.z - x11.x * a) / (x11.z);
-                    if (a != float.NaN && c != float.NaN)
+                    if (!float.IsNaN(a) && !float.IsNaN(c))
                     {
                         centerObject.transform.position = r1 + new Vector3(a, b, c);
-                        CheckNum = point1;
-                        CheckPoint = worldAnchorObjects[CheckNum].transform.position;
+                        checkNumber = point1;
+                        checkPosition = worldAnchorObjects[point1].transform.position;
                         // set front pos
-                        j1 = json.worldanchorFront[point1].GetVector3();
-                        j2 = json.worldanchorFront[point2].GetVector3();
-                        j3 = json.worldanchorFront[point3].GetVector3();
+                        j1 = jsonHubAnchor.worldanchorFront[point1].GetVector3();
+                        j2 = jsonHubAnchor.worldanchorFront[point2].GetVector3();
+                        j3 = jsonHubAnchor.worldanchorFront[point3].GetVector3();
                         r1 = worldAnchorObjects[point1].transform.position;
                         r2 = worldAnchorObjects[point2].transform.position;
                         r3 = worldAnchorObjects[point3].transform.position;
@@ -186,104 +188,115 @@ namespace MultiWorldAnchorSystem
                         // set center rot
                         centerObject.transform.LookAt(frontHubObject.transform, Vector3.up);
                         // set root
-                        root.transform.localPosition = json.rootPosition.GetVector3();
-                        root.transform.localRotation = json.rootRotation.GetQuaternion();
-                        return true;
+                        rootHubObject.transform.localPosition = jsonHubAnchor.rootPosition.GetVector3();
+                        rootHubObject.transform.localRotation = jsonHubAnchor.rootRotation.GetQuaternion();
+                        return;
                     }
 
                 }
             }
             if (count < StaticParameter.maxReturnCount)
             {
-                return SetCenterFromWorldAnchor(count++, r);
-            }
-            else
-            {
-                return false;
+                CreateHubAnchor(count+1, r);
             }
         }
 
-        public void SetCenterAndWorldAnchor(Vector3 pos, Quaternion rot, WorldAnchorControl anchor)
+        /// <summary>
+        /// RootHubとCenterの設置とworldanchorの設置処理
+        /// </summary>
+        /// <param name="rootHub"></param>
+        /// <param name="center"></param>
+        /// <param name="anchor"></param>
+        public void SetRootHubAndRootObjectTransform(Transform rootHub,Transform center, WorldAnchorControl anchor)
         {
-            centerObject.transform.SetPositionAndRotation(pos, rot);
+            rootHubObject.transform.SetPositionAndRotation(rootHub.position, rootHub.rotation);
+
+            centerObject.transform.SetPositionAndRotation(center.position, center.rotation);
             frontHubObject.transform.position = centerObject.transform.position + new Vector3(centerObject.transform.forward.x, 0, centerObject.transform.forward.z);
             centerObject.transform.LookAt(frontHubObject.transform, Vector3.up);
 
-            System.Random r = new System.Random();
+            var r = new System.Random();
             for (int i = 0; i < worldAnchorObjects.Length; i++)
             {
                 anchor.DeleteWorldAnchor(worldAnchorObjects[i]);
-                Vector3 buf = centerObject.transform.position;
+                var buf = centerObject.transform.position;
                 buf.x += ((float)r.NextDouble() - 0.5f) * StaticParameter.anchorDistance * 2.0f;
                 buf.z += ((float)r.NextDouble() - 0.5f) * StaticParameter.anchorDistance * 2.0f;
                 worldAnchorObjects[i].transform.position = buf;
+                isWorldAnchorObjects[i] = false;
+                anchor.SavedEvent += SavedEvent;
                 anchor.SaveWorldAnchor(worldAnchorObjects[i]);
             }
-
-            Enable = true;
         }
 
-        public void SetRootPosition(GameObject go)
+        /// <summary>
+        /// WorldAnchor保存完了処理
+        /// </summary>
+        /// <param name="self"></param>
+        /// <param name="go"></param>
+        /// <param name="success"></param>
+        private void SavedEvent(WorldAnchorControl self, GameObject go, bool success)
         {
-            root.transform.SetPositionAndRotation(go.transform.position, go.transform.rotation);
-        }
-
-        public Vector3 GetCenterLocalPosition()
-        {
-            return root.transform.localPosition;
-        }
-
-        public Quaternion GetCenterLocalRotation()
-        {
-            return root.transform.localRotation;
-        }
-
-        public Vector3[] GetWorldAnchorLocalPositionRoot()
-        {
-            var list = new Vector3[worldAnchorObjects.Length];
-            for (int i = 0; i < list.Length; i++)
+            // WorldAnchor保存完了処理
+            var activeCount = 0;
+            for (var i = 0; i < worldAnchorObjects.Length; i++)
             {
-                list[i]= centerObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position);
+                if (go.name == worldAnchorObjects[i].name && success == true) isWorldAnchorObjects[i] = true;
+                if (isWorldAnchorObjects[i] == true) activeCount++;
             }
-            return list;
-        }
 
-        public Vector3[] GetWorldAnchorLocalPositionFront()
-        {
-            var list = new Vector3[worldAnchorObjects.Length];
-            for (int i = 0; i < list.Length; i++)
+            if (activeCount > worldAnchorObjects.Length * StaticParameter.minAnchorLength)
             {
-                list[i] = frontHubObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position);
+                // HubAnchor組み立て
+                if (SavedHubAnchor != null) SavedHubAnchor();
+                self.SavedEvent -= SavedEvent;
             }
-            return list;
         }
 
-        public GameObject GetCenterObject()
+        /// <summary>
+        /// Center情報を出力
+        /// </summary>
+        /// <returns></returns>
+        public Transform GetCenterObjectTransform()
         {
-            return centerObject;
+            return centerObject.transform;
         }
 
-        public void isView(bool flag)
+        /// <summary>
+        /// HubAnchor情報を出力
+        /// </summary>
+        /// <returns></returns>
+        public Transform GetRootHubObjectTransform()
         {
-            SetActiveChiled(centerObject, flag);
+            return rootHubObject.transform;
+        }
+
+        /// <summary>
+        /// AnchorデータをJson形式に出力
+        /// </summary>
+        /// <returns></returns>
+        public JsonHubAnchor GetJsonHubAnchor()
+        {
+            var json = new JsonHubAnchor();
+            json.rootPosition = new JsonVector3(rootHubObject.transform.localPosition);
+            json.rootRotation = new JsonQuaternion(rootHubObject.transform.localRotation);
             for (int i = 0; i < worldAnchorObjects.Length; i++)
             {
-                SetActiveChiled(worldAnchorObjects[i], flag);
+                json.worldanchorCenter.Add(new JsonVector3(centerObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position)));
+                json.worldanchorFront.Add(new JsonVector3(frontHubObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position)));
             }
+
+            return json;
         }
 
-        private void SetActiveChiled(GameObject obj, bool flag)
+        /// <summary>
+        /// 保存データとの誤差を判定
+        /// </summary>
+        /// <returns></returns>
+        public bool CheckDistanceDelta()
         {
-            for (int i = 0; i < obj.transform.childCount; i++)
-            {
-                obj.transform.GetChild(i).gameObject.SetActive(flag);
-            }
-        }
-
-        public bool CheckCenterPosition()
-        {
-            var xdis = Vector3.Distance(worldAnchorObjects[CheckNum].transform.position, CheckPoint);
-            return (xdis < 0.01f) ? true : false;
+            var dis = Vector3.Distance(worldAnchorObjects[checkNumber].transform.position, checkPosition);
+            return (dis < StaticParameter.maxDistance) ? true : false;
         }
     }
 }
