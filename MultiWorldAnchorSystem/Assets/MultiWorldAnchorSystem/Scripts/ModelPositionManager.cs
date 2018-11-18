@@ -40,9 +40,6 @@ namespace MultiWorldAnchorSystem
     }
     public class ModelPositionManager : MonoBehaviour
     {
-
-        public GameObject WorldAnchorPrefab;
-
         public delegate void FinishSettingEventHandler();
         public FinishSettingEventHandler FinishSettingEvent;
 
@@ -64,7 +61,7 @@ namespace MultiWorldAnchorSystem
             SubCenterAnchor = new CenterAnchor[targets.Length];
             for (int i = 0; i < SubCenterAnchor.Length; i++)
             {
-                SubCenterAnchor[i] = new CenterAnchor(WorldAnchorPrefab, targets[i].name, StaticParameter.worldAnchorCount);
+                SubCenterAnchor[i] = new CenterAnchor(targets[i].name, StaticParameter.worldAnchorCount);
             }
 
             LoadCenterData();
@@ -103,20 +100,34 @@ namespace MultiWorldAnchorSystem
             {
                 for (int i = 0; i < SubCenterAnchor.Length; i++)
                 {
-                    SubCenterAnchor[i].SetRootPosition(SubCenterAnchor[0].center);
+                    SubCenterAnchor[i].SetRootPosition(SubCenterAnchor[0].GetCenterObject());
                 }
                 SaveCenterData();
                 LoadCenterData();
-                StopSetting();
+                isActive = false;
+                if (FinishSettingEvent != null) FinishSettingEvent();
             }
         }
 
         private void SaveCenterData()
         {
-            var list = new List<JsonAnchor>();
+            var list = new List<JsonHubAnchor>();
             for (var i = 0; i < SubCenterAnchor.Length; i++)
             {
-                list.Add(SubCenterAnchor[i].SaveWorldAnchor());
+                var hub = new JsonHubAnchor();
+                hub.rootPosition = new JsonVector3(SubCenterAnchor[i].GetCenterLocalPosition());
+                hub.rootRotation = new JsonQuaternion(SubCenterAnchor[i].GetCenterLocalRotation());
+                var root = SubCenterAnchor[i].GetWorldAnchorLocalPositionRoot();
+                for (int j = 0; j < root.Length; j++)
+                {
+                    hub.worldanchorCenter.Add(new JsonVector3(root[j]));
+                }
+                var front = SubCenterAnchor[i].GetWorldAnchorLocalPositionFront();
+                for (int j = 0; j < front.Length; j++)
+                {
+                    hub.worldanchorFront.Add(new JsonVector3(front[j]));
+                }
+                list.Add(hub);
             }
             JsonAnchorData.SaveAnchorData(list);
         }
@@ -159,7 +170,7 @@ namespace MultiWorldAnchorSystem
                         {
                             SubCenterAnchor[i].SetCenterFromWorldAnchor();
                         }
-                        float buf = Vector3.Distance(SubCenterAnchor[i].center.transform.position, Camera.main.transform.position);
+                        float buf = Vector3.Distance(SubCenterAnchor[i].GetCenterObject().transform.position, Camera.main.transform.position);
                         if (distance < 0.0f)
                         {
                             distance = buf;
@@ -197,19 +208,14 @@ namespace MultiWorldAnchorSystem
             {
                 for (int i = 0; i < SubCenterAnchor.Length; i++)
                 {
-                    SubCenterAnchor[i].SetRootPosition(SubCenterAnchor[0].center);
+                    SubCenterAnchor[i].SetRootPosition(SubCenterAnchor[0].GetCenterObject());
                 }
                 SaveCenterData();
                 LoadCenterData();
-                StopSetting();
+                isActive = false;
+                if (FinishSettingEvent != null) FinishSettingEvent();
                 return false;
             }
-        }
-
-        private void StopSetting()
-        {
-            isActive = false;
-            if (FinishSettingEvent != null) FinishSettingEvent();
         }
 
         public void IsViewObject(bool flag)

@@ -10,7 +10,7 @@ namespace MultiWorldAnchorSystem
     {
         private static string fileName = "info.json";
 
-        public static List<JsonAnchor> LoadAnchorData()
+        public static List<JsonHubAnchor> LoadAnchorData()
         {
             if (File.Exists(Application.persistentDataPath + "\\" + fileName) == true)
             {
@@ -25,7 +25,7 @@ namespace MultiWorldAnchorSystem
             }
         }
 
-        public static void SaveAnchorData(List<JsonAnchor> data)
+        public static void SaveAnchorData(List<JsonHubAnchor> data)
         {
             string json = JsonUtility.ToJson(new JsonCenter() {worldanchor = data});
             File.WriteAllText(Application.persistentDataPath + "\\" + fileName, json);
@@ -73,7 +73,7 @@ namespace MultiWorldAnchorSystem
     }
 
     [Serializable]
-    public class JsonAnchor
+    public class JsonHubAnchor
     {
         public JsonVector3 rootPosition=new JsonVector3();
         public JsonQuaternion rootRotation=new JsonQuaternion();
@@ -84,6 +84,6 @@ namespace MultiWorldAnchorSystem
     [Serializable]
     public class JsonCenter
     {
-        public List<JsonAnchor> worldanchor=new List<JsonAnchor>();
+        public List<JsonHubAnchor> worldanchor=new List<JsonHubAnchor>();
     }
 }
