@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
 using UnityEngine.XR.WSA.Input;
 using MultiWorldAnchorSystem;
 
@@ -34,7 +33,7 @@ public class MultiWorldAnchorSystemSample : MonoBehaviour
         {
             // 基準モデル移動
             var delta = args.normalizedOffset;
-            for (int i = 0; i < hubAnchorGameObjects.Length; i++)
+            for (var i = 0; i < hubAnchorGameObjects.Length; i++)
             {
                 hubAnchorGameObjects[i].transform.position += delta / 100.0f;
             }

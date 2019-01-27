@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using HoloLensModule.Environment;
 using UnityEngine;
 
 namespace MultiWorldAnchorSystem
@@ -86,7 +87,7 @@ namespace MultiWorldAnchorSystem
         {
             jsonHubAnchor = json;
             // WorldAnchorの読み込み
-            anchor.LoadedEvent += LoadedEvent;
+            anchor.LoadedEvent += loadedEvent;
             for (int i = 0; i < worldAnchorObjects.Length; i++)
             {
                 isWorldAnchorObjects[i] = false;
@@ -100,7 +101,7 @@ namespace MultiWorldAnchorSystem
         /// <param name="self"></param>
         /// <param name="go"></param>
         /// <param name="success"></param>
-        private void LoadedEvent(WorldAnchorControl self, GameObject go, bool success)
+        private void loadedEvent(WorldAnchorControl self, GameObject go, bool success)
         {
             // WorldAnchor読み込み完了処理
             var activeCount = 0;
@@ -115,7 +116,7 @@ namespace MultiWorldAnchorSystem
                 // HubAnchor組み立て
                 CreateHubAnchor();
                 if (LoadedHubAnchor != null) LoadedHubAnchor();
-                self.LoadedEvent -= LoadedEvent;
+                self.LoadedEvent -= loadedEvent;
             }
         }
 
@@ -137,42 +138,42 @@ namespace MultiWorldAnchorSystem
             var point2 = list[r.Next(0, list.Count - 1)];
             var point3 = list[r.Next(0, list.Count - 1)];
             // json distance
-            Vector3 j1 = jsonHubAnchor.worldanchorCenter[point1].GetVector3();
-            Vector3 j2 = jsonHubAnchor.worldanchorCenter[point2].GetVector3();
-            Vector3 j3 = jsonHubAnchor.worldanchorCenter[point3].GetVector3();
-            float j12 = Vector3.Distance(j1, j2);
-            float j23 = Vector3.Distance(j2, j3);
-            float j31 = Vector3.Distance(j3, j1);
+            var j1 = jsonHubAnchor.worldanchorCenter[point1];
+            var j2 = jsonHubAnchor.worldanchorCenter[point2];
+            var j3 = jsonHubAnchor.worldanchorCenter[point3];
+            var j12 = Vector3.Distance(j1, j2);
+            var j23 = Vector3.Distance(j2, j3);
+            var j31 = Vector3.Distance(j3, j1);
             // real distance
-            Vector3 r1 = worldAnchorObjects[point1].transform.position;
-            Vector3 r2 = worldAnchorObjects[point2].transform.position;
-            Vector3 r3 = worldAnchorObjects[point3].transform.position;
-            float r12 = Vector3.Distance(r1, r2);
-            float r23 = Vector3.Distance(r2, r3);
-            float r31 = Vector3.Distance(r3, r1);
+            var r1 = worldAnchorObjects[point1].transform.position;
+            var r2 = worldAnchorObjects[point2].transform.position;
+            var r3 = worldAnchorObjects[point3].transform.position;
+            var r12 = Vector3.Distance(r1, r2);
+            var r23 = Vector3.Distance(r2, r3);
+            var r31 = Vector3.Distance(r3, r1);
             // cheack distance
             if (point1 != point2 && point2 != point3 && point3 != point1)
             {
                 if ((j12 - r12) < StaticParameter.maxDistance && (j23 - r23) < StaticParameter.maxDistance && (j31 - r31) < StaticParameter.maxDistance)
                 {
                     // set center pos
-                    Vector3 x1 = -j1;
-                    Vector3 x2 = j2 - j1;
-                    Vector3 x4 = j3 - j1;
-                    Vector3 x11 = r2 - r1;
-                    Vector3 x31 = r3 - r1;
-                    float a = (x11.z * x1.x * x4.x + x11.z * x1.z * x4.z - x31.z * x1.x * x2.x - x31.z * x1.z * x2.z) / (x11.z * x31.x - x31.z * x11.x);
-                    float b = 0.0f;
-                    float c = (x1.x * x2.x + x1.z * x2.z - x11.x * a) / (x11.z);
+                    var x1 = -j1;
+                    var x2 = j2 - j1;
+                    var x4 = j3 - j1;
+                    var x11 = r2 - r1;
+                    var x31 = r3 - r1;
+                    var a = (x11.z * x1.x * x4.x + x11.z * x1.z * x4.z - x31.z * x1.x * x2.x - x31.z * x1.z * x2.z) / (x11.z * x31.x - x31.z * x11.x);
+                    var b = 0.0f;
+                    var c = (x1.x * x2.x + x1.z * x2.z - x11.x * a) / (x11.z);
                     if (!float.IsNaN(a) && !float.IsNaN(c))
                     {
                         centerObject.transform.position = r1 + new Vector3(a, b, c);
                         checkNumber = point1;
                         checkPosition = worldAnchorObjects[point1].transform.position;
                         // set front pos
-                        j1 = jsonHubAnchor.worldanchorFront[point1].GetVector3();
-                        j2 = jsonHubAnchor.worldanchorFront[point2].GetVector3();
-                        j3 = jsonHubAnchor.worldanchorFront[point3].GetVector3();
+                        j1 = jsonHubAnchor.worldanchorFront[point1];
+                        j2 = jsonHubAnchor.worldanchorFront[point2];
+                        j3 = jsonHubAnchor.worldanchorFront[point3];
                         r1 = worldAnchorObjects[point1].transform.position;
                         r2 = worldAnchorObjects[point2].transform.position;
                         r3 = worldAnchorObjects[point3].transform.position;
@@ -188,8 +189,8 @@ namespace MultiWorldAnchorSystem
                         // set center rot
                         centerObject.transform.LookAt(frontHubObject.transform, Vector3.up);
                         // set root
-                        rootHubObject.transform.localPosition = jsonHubAnchor.rootPosition.GetVector3();
-                        rootHubObject.transform.localRotation = jsonHubAnchor.rootRotation.GetQuaternion();
+                        rootHubObject.transform.localPosition = jsonHubAnchor.rootPosition;
+                        rootHubObject.transform.localRotation = jsonHubAnchor.rootRotation;
                         return;
                     }
 
@@ -216,7 +217,7 @@ namespace MultiWorldAnchorSystem
             centerObject.transform.LookAt(frontHubObject.transform, Vector3.up);
 
             var r = new System.Random();
-            for (int i = 0; i < worldAnchorObjects.Length; i++)
+            for (var i = 0; i < worldAnchorObjects.Length; i++)
             {
                 anchor.DeleteWorldAnchor(worldAnchorObjects[i]);
                 var buf = centerObject.transform.position;
@@ -278,12 +279,14 @@ namespace MultiWorldAnchorSystem
         public JsonHubAnchor GetJsonHubAnchor()
         {
             var json = new JsonHubAnchor();
-            json.rootPosition = new JsonVector3(rootHubObject.transform.localPosition);
-            json.rootRotation = new JsonQuaternion(rootHubObject.transform.localRotation);
-            for (int i = 0; i < worldAnchorObjects.Length; i++)
+            json.rootPosition = rootHubObject.transform.localPosition;
+            json.rootRotation = rootHubObject.transform.localRotation;
+            for (var i = 0; i < worldAnchorObjects.Length; i++)
             {
-                json.worldanchorCenter.Add(new JsonVector3(centerObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position)));
-                json.worldanchorFront.Add(new JsonVector3(frontHubObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position)));
+                json.worldanchorCenter.Add(
+                    centerObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position));
+                json.worldanchorFront.Add(
+                    frontHubObject.transform.InverseTransformPoint(worldAnchorObjects[i].transform.position));
             }
 
             return json;

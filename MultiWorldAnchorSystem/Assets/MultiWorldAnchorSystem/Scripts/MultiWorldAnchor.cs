@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using HoloLensModule.Environment;
 using UnityEngine;
 
 namespace MultiWorldAnchorSystem
@@ -95,6 +96,7 @@ namespace MultiWorldAnchorSystem
         void Start()
         {
             anchor = GetComponent<WorldAnchorControl>();
+            if (anchor == null) anchor = gameObject.AddComponent<WorldAnchorControl>();
             Init();
         }
 
@@ -110,7 +112,7 @@ namespace MultiWorldAnchorSystem
             {
                 // 初期化
                 var loadedCount = 0;
-                for (int i = 0; i < data.Count; i++)
+                for (var i = 0; i < data.Count; i++)
                 {
                     var hub = new HubAnchor(i.ToString());
                     // アンカー再設置
@@ -138,7 +140,7 @@ namespace MultiWorldAnchorSystem
             if (hubAnchors.Count != goList.Length)
             {
                 hubAnchors.Clear();
-                for (int i = 0; i < goList.Length; i++)
+                for (var i = 0; i < goList.Length; i++)
                 {
                     hubAnchors.Add(new HubAnchor(i.ToString()));
                 }
@@ -146,7 +148,7 @@ namespace MultiWorldAnchorSystem
 
             // 0番目をCenterに指定
             var savedCount = 0;
-            for (int i = 0; i < goList.Length; i++)
+            for (var i = 0; i < goList.Length; i++)
             {
                 hubAnchors[i].SetRootHubAndRootObjectTransform(goList[i].transform, goList[0].transform, anchor);
                 // アンカー保存処理
@@ -192,7 +194,7 @@ namespace MultiWorldAnchorSystem
                 // アンカー位置再計算フラグ
                 var resetflag = false;
                 // アンカーずれ検知
-                for (int i = 0; i < hubAnchors.Count; i++)
+                for (var i = 0; i < hubAnchors.Count; i++)
                 {
                     if (hubAnchors[i].CheckDistanceDelta() == false)
                     {
@@ -214,7 +216,7 @@ namespace MultiWorldAnchorSystem
 
                 // アンカー補正処理
                 int? num = null;
-                float distance = 0.0f;
+                var distance = 0.0f;
                 for (var i = 0; i < hubAnchors.Count; i++)
                 {
                     // アンカー位置再計算

@@ -191,11 +191,6 @@ Prefab:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 114131782114928416, guid: e4d9f8a852d00b944953a65e361af2b9,
-        type: 2}
-      propertyPath: hubAnchorGameObjects.Array.size
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 4002651723000168, guid: e4d9f8a852d00b944953a65e361af2b9, type: 2}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -228,26 +223,21 @@ Prefab:
       propertyPath: m_RootOrder
       value: 2
       objectReference: {fileID: 0}
-    - target: {fileID: 114131782114928416, guid: e4d9f8a852d00b944953a65e361af2b9,
-        type: 2}
-      propertyPath: hubAnchorGameObjects.Array.data[1]
-      value: 
-      objectReference: {fileID: 485877469}
-    - target: {fileID: 114131782114928416, guid: e4d9f8a852d00b944953a65e361af2b9,
-        type: 2}
-      propertyPath: hubAnchorGameObjects.Array.data[2]
-      value: 
-      objectReference: {fileID: 1808050129}
-    - target: {fileID: 114131782114928416, guid: e4d9f8a852d00b944953a65e361af2b9,
-        type: 2}
-      propertyPath: hubAnchorGameObjects.Array.data[0]
-      value: 
-      objectReference: {fileID: 1808050129}
     - target: {fileID: 114727972516775838, guid: e4d9f8a852d00b944953a65e361af2b9,
         type: 2}
       propertyPath: worldCenterObject
       value: 
       objectReference: {fileID: 1258405011}
+    - target: {fileID: 114131782114928416, guid: e4d9f8a852d00b944953a65e361af2b9,
+        type: 2}
+      propertyPath: hubAnchorGameObjects.Array.data[0]
+      value: 
+      objectReference: {fileID: 1808050129}
+    - target: {fileID: 114131782114928416, guid: e4d9f8a852d00b944953a65e361af2b9,
+        type: 2}
+      propertyPath: hubAnchorGameObjects.Array.data[1]
+      value: 
+      objectReference: {fileID: 485877469}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: e4d9f8a852d00b944953a65e361af2b9, type: 2}
   m_IsPrefabParent: 0
